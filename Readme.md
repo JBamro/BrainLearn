@@ -116,6 +116,14 @@ In Cute Chess, set a tournament according to the photo in this link:
 
 Note: We recommend you use games from high quality play.
 
+## Testers team
+
+| First nameHeader  | Last name     | Physical cores     | Logical cores      | RAM (GB)           |
+| ----------------- | ------------- | ------------------ | ------------------ | ------------------ |
+| Dennis            | Kazan         |  8                 | 16                 | 16                 |  
+| Marc              | Greenhaw      | 40                 | 80                 | 256                |
+| Marcos Alexander  | Porto         | 36                 | 72                 | 228                |
+
 ## Terms of use
 
 BrainLearn is free, and distributed under the **GNU General Public License version 3** (GPL v3). Essentially, this means that you are free to do almost exactly what you want with the program, including distributing it among your friends, making it available for download from your web site, selling it (either by itself or as part of some bigger software package), or using it as the starting point for a software project of your own.
