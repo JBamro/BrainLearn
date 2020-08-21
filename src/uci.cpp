@@ -1,8 +1,6 @@
 /*
   Stockfish, a UCI chess playing engine derived from Glaurung 2.1
-  Copyright (C) 2004-2008 Tord Romstad (Glaurung author)
-  Copyright (C) 2008-2015 Marco Costalba, Joona Kiiski, Tord Romstad
-  Copyright (C) 2015-2020 Marco Costalba, Joona Kiiski, Gary Linscott, Tord Romstad
+  Copyright (C) 2004-2020 The Stockfish developers (see AUTHORS file)
 
   Stockfish is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -42,32 +40,8 @@ using namespace std;
 
 extern vector<string> setup_bench(const Position&, istream&);
 
-// FEN string of the initial position, normal chess
-const char* StartFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-
-// Command to automatically generate a game record
-#if defined (EVAL_LEARN)
-namespace Learner
-{
-  // Automatic generation of teacher position
-  void gen_sfen(Position& pos, istringstream& is);
-
-  // Learning from the generated game record
-  void learn(Position& pos, istringstream& is);
-
-#if defined(GENSFEN2019)
-  // Automatic generation command of teacher phase under development
-  void gen_sfen2019(Position& pos, istringstream& is);
-#endif
-
-  // A pair of reader and evaluation value. Returned by Learner::search(),Learner::qsearch().
-  typedef std::pair<Value, std::vector<Move> > ValueAndPV;
-
-  ValueAndPV qsearch(Position& pos);
-  ValueAndPV search(Position& pos, int depth_, size_t multiPV = 1, uint64_t nodesLimit = 0);
-
-}
-#endif
+int maximumPly = 0; //from Kelly
+namespace {
 
 #if defined(EVAL_NNUE) && defined(ENABLE_TEST_CMD)
 void test_cmd(Position& pos, istringstream& is)
@@ -125,7 +99,7 @@ namespace {
 	  currentLearningEntry.performance = 100;
 	  if(!Options["Self Q-learning"])
       {
-	  	insertIntoOrUpdateLearningTable(currentLearningEntry,globalLearningHT);
+	  	insertIntoOrUpdateLearningTable(currentLearningEntry);
       }
 	  maximumPly = plies;
 	}
@@ -133,6 +107,20 @@ namespace {
         states->emplace_back();
         pos.do_move(m, states->back());
     }
+  }
+
+  // trace_eval() prints the evaluation for the current position, consistent with the UCI
+  // options set so far.
+
+  void trace_eval(Position& pos) {
+
+    StateListPtr states(new std::deque<StateInfo>(1));
+    Position p;
+    p.set(pos.fen(), Options["UCI_Chess960"], &states->back(), Threads.main());
+
+    Eval::verify_NNUE();
+
+    sync_cout << "\n" << Eval::trace(p) << sync_endl;
   }
 
 
@@ -223,7 +211,7 @@ namespace {
                nodes += Threads.nodes_searched();
             }
             else
-               sync_cout << "\n" << Eval::trace(pos) << sync_endl;
+               trace_eval(pos);
         }
         else if (token == "setoption")  setoption(is);
         else if (token == "position")   position(pos, is, states);
@@ -393,7 +381,7 @@ void UCI::loop(int argc, char* argv[]) {
                   putGameLineIntoLearningTable();
 
               //Save to learning file
-              writeLearningFile(HashTableType::global);
+              writeLearningFile();
           }
           //from Kelly end
       	  Threads.stop = true;
@@ -425,7 +413,7 @@ void UCI::loop(int argc, char* argv[]) {
 
           //Save to learning file
           if (!Options["Read only learning"])
-              writeLearningFile(HashTableType::global);
+              writeLearningFile();
           //from Kelly end
 
 		  #if defined(EVAL_NNUE)
@@ -446,7 +434,7 @@ void UCI::loop(int argc, char* argv[]) {
       else if (token == "flip")     pos.flip();
       else if (token == "bench")    bench(pos, is, states);
       else if (token == "d")        sync_cout << pos << sync_endl;
-      else if (token == "eval")     sync_cout << Eval::trace(pos) << sync_endl;
+      else if (token == "eval")     trace_eval(pos);
       else if (token == "compiler") sync_cout << compiler_info() << sync_endl;
 #if defined (EVAL_LEARN)
       else if (token == "gensfen") Learner::gen_sfen(pos, is);
