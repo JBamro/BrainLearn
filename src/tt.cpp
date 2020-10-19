@@ -21,7 +21,7 @@
 #include <iomanip>
 #include <thread>
 #include <algorithm>
-#include <fstream> //from kellykynyama mcts
+#include <fstream> //from kellykynyama
 #include "bitboard.h"
 #include "misc.h"
 #include "thread.h"
@@ -70,11 +70,12 @@ void TranspositionTable::resize(size_t mbSize) {
 
   Threads.main()->wait_for_search_finished();
 
-  aligned_ttmem_free(mem);
+  aligned_large_pages_free(table);
 
   clusterCount = mbSize * 1024 * 1024 / sizeof(Cluster);
-  table = static_cast<Cluster*>(aligned_ttmem_alloc(clusterCount * sizeof(Cluster), mem));
-  if (!mem)
+
+  table = static_cast<Cluster*>(aligned_large_pages_alloc(clusterCount * sizeof(Cluster)));
+  if (!table)
   {
       std::cerr << "Failed to allocate " << mbSize
                 << "MB for transposition table." << std::endl;
